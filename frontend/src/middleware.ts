@@ -8,6 +8,7 @@ const PROTECTED_PREFIXES = [
   "/customers",
   "/wastage",
   "/analytics",
+  "/profile",
 ];
 
 // Routes only accessible to unauthenticated visitors
@@ -58,6 +59,7 @@ export const config = {
     "/customers/:path*",
     "/wastage/:path*",
     "/analytics/:path*",
+    "/profile/:path*",
     "/login",
     "/register",
   ],

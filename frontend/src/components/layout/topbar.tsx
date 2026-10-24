@@ -7,11 +7,14 @@ import {
   Menu,
   Moon,
   Search,
-  ShieldCheck,
   Sun,
+  User as UserIcon,
 } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/context/auth-context";
+import { employeeApi } from "@/lib/api/employees";
 
 interface TopbarProps {
   onMenuClick?: () => void;
@@ -24,38 +27,35 @@ const ROLE_DISPLAY_NAMES: Record<string, string> = {
   RESTAURANT_CLIENT: "Restaurant Client",
 };
 
-const ROLE_BADGE_COLORS: Record<
-  string,
-  { bg: string; text: string; border: string }
-> = {
-  ADMIN: {
-    bg: "bg-purple-50 dark:bg-purple-950/40",
-    text: "text-purple-700 dark:text-purple-300",
-    border: "border-purple-200 dark:border-purple-900/60",
-  },
-  WAREHOUSE_MANAGER: {
-    bg: "bg-emerald-50 dark:bg-emerald-950/40",
-    text: "text-emerald-700 dark:text-emerald-300",
-    border: "border-emerald-200 dark:border-emerald-900/60",
-  },
-  SALES_AGENT: {
-    bg: "bg-blue-50 dark:bg-blue-950/40",
-    text: "text-blue-700 dark:text-blue-300",
-    border: "border-blue-200 dark:border-blue-900/60",
-  },
-  RESTAURANT_CLIENT: {
-    bg: "bg-amber-50 dark:bg-amber-950/40",
-    text: "text-amber-700 dark:text-amber-300",
-    border: "border-amber-200 dark:border-amber-900/60",
-  },
-};
-
 export function Topbar({ onMenuClick }: TopbarProps) {
   const { user, logout } = useAuth();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
+    user?.profile_picture_url || null,
+  );
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (user?.profile_picture_url) {
+      setProfilePictureUrl(user.profile_picture_url);
+    }
+    employeeApi
+      .getMyProfile()
+      .then((p) => {
+        if (isMounted && p.profile_picture_url) {
+          setProfilePictureUrl(p.profile_picture_url);
+        }
+      })
+      .catch(() => {
+        // Non-employee accounts or network fallback
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   useEffect(() => {
     const saved = localStorage.getItem("theme") as "light" | "dark" | null;
@@ -145,9 +145,6 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   const roleName = user?.role
     ? ROLE_DISPLAY_NAMES[user.role] || user.role
     : "Staff";
-  const roleColors = user?.role
-    ? ROLE_BADGE_COLORS[user.role] || ROLE_BADGE_COLORS.WAREHOUSE_MANAGER
-    : ROLE_BADGE_COLORS.WAREHOUSE_MANAGER;
 
   return (
     <header className="h-14 border-b border-slate-200/80 bg-white px-3 sm:px-4 flex items-center justify-between dark:border-[#1b2b24] dark:bg-[#0e1512] shrink-0 sticky top-0 z-30 transition-colors duration-200">
@@ -225,9 +222,21 @@ export function Topbar({ onMenuClick }: TopbarProps) {
             aria-haspopup="true"
             className="flex items-center gap-2.5 pl-1 py-1 pr-1.5 rounded-lg hover:bg-slate-100/80 dark:hover:bg-[#141f1a] transition-colors text-left group focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
           >
-            <div className="size-8 rounded-full bg-[#063c35] text-white flex items-center justify-center text-xs font-semibold tracking-tight shadow-xs ring-1 ring-emerald-700/20">
-              {initials}
-            </div>
+            {profilePictureUrl ? (
+              <div className="relative size-8 rounded-full overflow-hidden ring-1 ring-emerald-700/20 shrink-0">
+                <Image
+                  src={profilePictureUrl}
+                  alt={displayName}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                />
+              </div>
+            ) : (
+              <div className="size-8 rounded-full bg-[#063c35] text-white flex items-center justify-center text-xs font-semibold tracking-tight shadow-xs ring-1 ring-emerald-700/20 shrink-0">
+                {initials}
+              </div>
+            )}
             <div className="text-left hidden sm:block">
               <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-tight">
                 {displayName}
@@ -254,9 +263,21 @@ export function Topbar({ onMenuClick }: TopbarProps) {
               {/* User Identity Header */}
               <div className="px-3 py-2.5 rounded-lg bg-slate-50/80 dark:bg-[#16231d]/60 border border-slate-100 dark:border-[#1b2b24]/80">
                 <div className="flex items-center gap-2.5">
-                  <div className="size-9 rounded-full bg-[#063c35] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                    {initials}
-                  </div>
+                  {profilePictureUrl ? (
+                    <div className="relative size-9 rounded-full overflow-hidden ring-1 ring-emerald-700/20 shrink-0">
+                      <Image
+                        src={profilePictureUrl}
+                        alt={displayName}
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="size-9 rounded-full bg-[#063c35] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                      {initials}
+                    </div>
+                  )}
                   <div className="overflow-hidden min-w-0">
                     <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
                       {displayName}
@@ -266,30 +287,21 @@ export function Topbar({ onMenuClick }: TopbarProps) {
                     </p>
                   </div>
                 </div>
-
-                <div className="mt-2.5 flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-[#1b2b24]">
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${roleColors.bg} ${roleColors.text} ${roleColors.border}`}
-                  >
-                    {roleName}
-                  </span>
-                  {user?.tier && (
-                    <span className="text-[10px] font-mono font-semibold text-emerald-600 dark:text-emerald-400">
-                      Tier: {user.tier}
-                    </span>
-                  )}
-                </div>
               </div>
 
               {/* Menu items */}
               <div className="py-1">
-                <div className="px-3 py-1.5 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                  <ShieldCheck
+                <Link
+                  href="/profile"
+                  onClick={() => setIsProfileOpen(false)}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#16231d] transition-colors"
+                >
+                  <UserIcon
                     size={14}
                     className="text-emerald-600 dark:text-emerald-400 shrink-0"
                   />
-                  <span>Session Active • SimpleJWT</span>
-                </div>
+                  <span>My Profile</span>
+                </Link>
               </div>
 
               <div className="border-t border-slate-100 dark:border-[#1b2b24] my-1" />

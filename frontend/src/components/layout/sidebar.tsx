@@ -5,10 +5,13 @@ import {
   ChevronDown,
   ChevronRight,
   ClipboardList,
+  HelpCircle,
   LayoutDashboard,
   Package,
+  Settings,
   Snowflake,
   Trash2,
+  User,
   Users,
   X,
 } from "lucide-react";
@@ -196,6 +199,53 @@ export function Sidebar({ className, onMobileClose }: SidebarProps) {
               </div>
             );
           })}
+
+          {/* Section Divider */}
+          <div className="pt-2 pb-1">
+            <div className="h-px bg-[#0b4e45]" />
+          </div>
+
+          {/* My Profile Link */}
+          <Link
+            href="/profile"
+            className={cn(
+              "flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors",
+              pathname === "/profile"
+                ? "bg-[#0b5349] text-white shadow-xs"
+                : "text-emerald-100/70 hover:bg-[#09473e] hover:text-white",
+            )}
+          >
+            <User size={16} className="shrink-0 text-[#34d399]" />
+            <span>My Profile</span>
+          </Link>
+
+          {/* Settings Link */}
+          <Link
+            href="/settings"
+            className={cn(
+              "flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors",
+              pathname === "/settings"
+                ? "bg-[#0b5349] text-white shadow-xs"
+                : "text-emerald-100/70 hover:bg-[#09473e] hover:text-white",
+            )}
+          >
+            <Settings size={16} className="shrink-0 opacity-80" />
+            <span>Settings</span>
+          </Link>
+
+          {/* Help & Support Link */}
+          <Link
+            href="/help"
+            className={cn(
+              "flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors",
+              pathname === "/help"
+                ? "bg-[#0b5349] text-white shadow-xs"
+                : "text-emerald-100/70 hover:bg-[#09473e] hover:text-white",
+            )}
+          >
+            <HelpCircle size={16} className="shrink-0 opacity-80" />
+            <span>Help & Support</span>
+          </Link>
         </nav>
       </div>
 
