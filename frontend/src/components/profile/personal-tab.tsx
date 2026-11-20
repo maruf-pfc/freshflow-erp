@@ -15,7 +15,7 @@ export function PersonalTab({ profile, onEdit }: PersonalTabProps) {
         month: "short",
         year: "numeric",
       })
-    : "15 Mar 1992";
+    : "Not specified";
 
   return (
     <div className="rounded-xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-[#1b2b24] dark:bg-[#0e1512]">
@@ -105,7 +105,7 @@ export function PersonalTab({ profile, onEdit }: PersonalTabProps) {
                 National Identification No.
               </span>
               <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
-                {profile.national_id || "19923657891234"}
+                {profile.national_id || "—"}
               </span>
             </div>
           </div>

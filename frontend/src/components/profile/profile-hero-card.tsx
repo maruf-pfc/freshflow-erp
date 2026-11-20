@@ -29,7 +29,7 @@ export function ProfileHeroCard({
         month: "short",
         year: "numeric",
       })
-    : "12 Jan 2024";
+    : "Active Member";
 
   // Derive initials
   const initials =

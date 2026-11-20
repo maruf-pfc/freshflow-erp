@@ -1,4 +1,4 @@
-# FreshFlow: Cold Chain Inventory & Restaurant Supply CRM
+# FreshFlow ERP: Cold-Chain Inventory & B2B Perishable Supply Platform
 
 Enterprise-grade B2B perishable supply platform engineered to eliminate food waste and logistics inefficiencies across cold-chain distribution networks.
 
@@ -6,25 +6,27 @@ Enterprise-grade B2B perishable supply platform engineered to eliminate food was
 
 ## Core Capabilities
 
-- **Algorithmic FEFO Stock Allocation:** First-Expired, First-Out batch picking with row-level database locking (`select_for_update`) to prevent race conditions and over-allocation.
-- **Cold-Chain Compliance Tracking:** Temperature logging per batch with automated quarantine status triggers upon thermal breach.
-- **B2B Dynamic Tiered Pricing:** Dynamic customer tier discounts (Bronze 0%, Silver 3%, Gold 7%, Platinum 10% on profit margin) with baseline purchase cost protection.
-- **Automated Wastage & Expiry Markdown:** Near-expiry price degradation (30% markdown for items within 48h of expiration) and audited financial wastage scrap accounting.
-- **Role-Based Access Control (RBAC):** Server-side zero-trust authorization enforcing four business roles with SimpleJWT token rotation and blacklisting.
+- **Algorithmic FEFO Stock Allocation:** First-Expired, First-Out batch picking with row-level database locking (`select_for_update()`) inside atomic transactions to prevent race conditions and over-allocation.
+- **Cold-Chain Compliance & Telemetry:** Temperature tracking per storage bin with automated quarantine alerts upon thermal breach.
+- **B2B Dynamic Tiered Pricing:** Dynamic customer tier discounts on profit margins (Bronze 0%, Silver 3%, Gold 7%, Platinum 10%) with baseline purchase cost protection.
+- **Automated Wastage & Near-Expiry Markdown:** Near-expiry dynamic price degradation (30% markdown for items within 48h of expiration) and audited financial wastage scrap accounting.
+- **Role-Based Access Control (RBAC):** Server-side zero-trust authorization enforcing four business personas with SimpleJWT single-use token rotation and blacklisting.
+- **Interactive In-App API Test Bench (`/api-tester`):** Instant 1-click persona switching, live request dispatching, latency telemetry, and payload inspection.
+- **Bengali Domain REST Test Bench (`freshflow_bengali_api_test.http`):** Comprehensive test bench populated with authentic Bengali items (Padma Hilsa, Bogura Curd, Savar Milk) and restaurants (Kasturi, Star Kabab).
 
 ---
 
 ## Technology Stack
 
-| Layer | Technology | Version |
+| Layer | Technology | Details |
 |---|---|---|
-| **Backend Framework** | Django / Django REST Framework | Django 6.1.2 / DRF 3.15+ |
-| **Authentication** | SimpleJWT with Token Rotation & Blacklisting | 5.3+ |
-| **Database** | SQLite (WAL mode, busy timeout 5000ms) / Turso (libSQL) | 3.x |
-| **Frontend Framework** | Next.js (App Router) | 16.3.8 |
-| **UI & Styling** | React 19, Tailwind CSS 4, Lucide Icons | React 19.2.8 / Tailwind 4.x |
-| **Data Fetching** | Axios singleton (with refresh concurrency queue), TanStack Query | Axios 1.7+ / Query 5.66+ |
-| **Language & Tooling** | TypeScript 5, Biome | TS 5.x / Biome 2.4+ |
+| **Backend Framework** | Django 5.1+ & Django REST Framework | 7 domain modules with transactional services |
+| **Authentication** | Django SimpleJWT | Token rotation, blacklisting, and RBAC permissions |
+| **Database** | SQLite (WAL Mode, 5000ms busy timeout) / Turso (libSQL) | Atomic transactions with `select_for_update()` row locks |
+| **Frontend Framework** | Next.js 15 (App Router) | React 19, Server & Client Components |
+| **Styling & Fonts** | Tailwind CSS 4, Plus Jakarta Sans, JetBrains Mono | Custom editorial aesthetic, dark mode support |
+| **HTTP & State** | Axios singleton (with queued 401 refresh mechanism) | TanStack React Query 5 |
+| **Testing & Quality** | Django Test Runner, Biome 2.4, TypeScript 5.8 | 29/29 automated backend tests passing |
 
 ---
 
@@ -35,27 +37,32 @@ freshflow-erp/
 ├── backend/
 │   ├── apps/
 │   │   ├── authentication/   # Custom User model, JWT serializers, RBAC permissions
-│   │   ├── inventory/        # PerishableItem, StockBatch, TemperatureLog
+│   │   ├── inventory/        # PerishableItem, StockBatch, shelf-life countdowns
 │   │   ├── crm/              # Restaurant profiles, rolling spend, tier progression
 │   │   ├── orders/           # Order, OrderItem, atomic FEFO allocation service
 │   │   ├── wastage/          # WastageLog, scrap write-offs, markdown commands
-│   │   └── analytics/        # Spoilage metrics, sourcing matrix, KPI views
+│   │   ├── analytics/        # Spoilage metrics, sourcing matrix, KPI views
+│   │   └── employees/        # EmployeeProfile, audit logs, reporting structure
 │   ├── core/                 # settings.py, urls.py, wsgi.py
 │   ├── manage.py
 │   └── requirements.txt
 ├── frontend/
 │   ├── src/
-│   │   ├── app/              # Next.js App Router (pages and layouts)
-│   │   ├── components/       # UI elements and layout components
-│   │   ├── lib/              # api.ts (Axios client with JWT interceptor queue)
-│   │   └── types/            # TypeScript data contracts mirroring Django models
+│   │   ├── app/              # Next.js App Router (overview, profile, api-tester, login)
+│   │   ├── components/       # Profile tabs, overview widgets, navbar, sidebar
+│   │   ├── context/          # auth-context.tsx
+│   │   ├── lib/              # api.ts (Axios singleton with token refresh queue)
+│   │   └── types/            # TypeScript contracts mirroring backend models
 │   ├── package.json
 │   └── tsconfig.json
 ├── docs/
-│   ├── AUTHENTICATION.md     # Technical specification for auth & RBAC
-│   └── deliverables.txt      # Implementation roadmap and domain logic specifications
-├── qna/
-│   └── AUTHENTICATION_QNA.md # Defense presentation Q&A preparation guide
+│   ├── TECHNICAL_GUIDE.md           # Engineering architecture & database lock specs
+│   ├── USER_MANUAL.md               # End-to-end operations & code walkthrough manual
+│   ├── PRE_DEFENSE_PRESENTATION.md  # 15-slide university defense script with timings
+│   ├── DEFENSE_QA_PREPARATION.md    # 10 tough defense board questions & CSE answers
+│   └── AUTHENTICATION.md            # JWT & RBAC technical specification
+├── freshflow_bengali_api_test.http  # VS Code / JetBrains REST Client test file
+├── run.sh                           # 1-command startup script
 └── README.md
 ```
 
@@ -65,140 +72,96 @@ freshflow-erp/
 
 The system enforces four distinct personas aligned with cold-chain operations:
 
-| Role | Target Persona | Access Level |
-|---|---|---|
-| `ADMIN` | System administrator / business owner | Full system access across all modules |
-| `WAREHOUSE_MANAGER` | Cold storage facility manager | Inventory intake, batch logging, temperature records, wastage logging |
-| `SALES_AGENT` | B2B restaurant account manager | CRM restaurant management, order placement across clients |
-| `RESTAURANT_CLIENT` | B2B restaurant buyer | Read catalog (dynamic tier price), self-service order placement, own order history |
+| Role | Target Persona | Credentials | Access Level |
+|---|---|---|---|
+| `ADMIN` | System Administrator | `admin_demo` / `Password123!` | Full system governance, employee directory, immutable audit logs |
+| `WAREHOUSE_MANAGER` | Cold Storage Facility Manager | `warehouse_demo` / `Password123!` | Inventory intake, batch logging, temperature telemetry, wastage logging |
+| `SALES_AGENT` | B2B Account Manager | `sales_demo` / `Password123!` | CRM client management, order placement across dining clients |
+| `RESTAURANT_CLIENT` | B2B Dining Partner | `bistro_chef` / `StrongPassword123!` | Catalog ordering, FEFO allocation review, tier discounts |
 
 ---
 
 ## Getting Started
 
-### Prerequisites
-
-- **Python:** 3.12+
-- **Node.js:** 18.18+ (Node 20+ recommended)
-- **Package Manager:** npm or pnpm
-
----
-
-### Backend Setup
-
-1. **Navigate to the backend directory:**
-   ```bash
-   cd backend
-   ```
-
-2. **Create and activate a virtual environment:**
-   ```bash
-   python3 -m venv ../venv
-   source ../venv/bin/activate
-   ```
-
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure environment variables:**
-   ```bash
-   cp .env.example .env
-   ```
-   Ensure `.env` contains:
-   ```env
-   SECRET_KEY=your-secure-secret-key
-   DEBUG=True
-   ALLOWED_HOSTS=localhost,127.0.0.1
-   USE_TURSO=False
-   ```
-
-5. **Apply database migrations:**
-   ```bash
-   python manage.py migrate
-   ```
-
-6. **Start the development server:**
-   ```bash
-   python manage.py runserver 8005
-   ```
-   The backend API will be available at `http://127.0.0.1:8005/`.
+### 1-Command Startup
+```bash
+chmod +x run.sh
+./run.sh
+```
+This automatically starts:
+- **Backend API:** `http://localhost:8005/api/`
+- **Frontend App:** `http://localhost:3000/`
 
 ---
 
-### Frontend Setup
+### Manual Setup
 
-1. **Navigate to the frontend directory:**
-   ```bash
-   cd frontend
-   ```
+#### Backend Setup
+```bash
+# 1. Activate virtual environment
+source venv/bin/activate
 
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+# 2. Install dependencies
+pip install -r backend/requirements.txt
 
-3. **Configure environment variables:**
-   Create `.env.local`:
-   ```env
-   NEXT_PUBLIC_API_URL=http://localhost:8005/api
-   ```
+# 3. Apply database migrations
+python backend/manage.py migrate
 
-4. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
-   The frontend application will be available at `http://localhost:3000/`.
+# 4. (Optional) Seed demo users & employees
+python backend/manage.py seed_employees
 
----
+# 5. Start Django development server
+python backend/manage.py runserver 8005
+```
 
-## Primary API Endpoints
+#### Frontend Setup
+```bash
+cd frontend
 
-### Health Check
-- `GET /api/health/` — Service liveness probe
+# 1. Install dependencies
+npm install
 
-### Authentication (`/api/auth/`)
-- `POST /api/auth/token/` — Login (returns access token, refresh token, user profile)
-- `POST /api/auth/token/refresh/` — Refresh access token (with single-use token rotation)
-- `POST /api/auth/token/blacklist/` — Logout (revokes refresh token)
-- `POST /api/auth/register/` — Client self-registration (default role: `RESTAURANT_CLIENT`)
-- `GET, PUT /api/auth/profile/` — Authenticated user profile inspection and updates
-
-### Inventory & Batches (`/api/inventory/`)
-- `GET, POST /api/inventory/items/` — Perishable item definitions and catalog
-- `GET, POST /api/inventory/batches/` — Stock batch intake with initial temperature logging
-- `POST /api/inventory/batches/{id}/log_temperature/` — Cold-chain compliance temperature check
-
-### CRM & Clients (`/api/crm/`)
-- `GET, POST /api/crm/restaurants/` — Restaurant client profiles and rolling spend tracking
-- `GET /api/crm/restaurants/{id}/tier/` — Current discount tier status
-
-### Orders (`/api/orders/`)
-- `POST /api/orders/` — Place order (executes transactional FEFO allocation)
-- `GET /api/orders/` — Order history and fulfillment status
-
-### Wastage & Spoilage (`/api/wastage/`)
-- `POST /api/wastage/scrap/` — Log physical wastage and calculate balance sheet loss
-- `GET /api/wastage/logs/` — Audit trail of scrap events
-
-### Analytics (`/api/analytics/`)
-- `GET /api/analytics/kpis/` — Executive KPI aggregation (active batches, daily orders, spoilage)
-- `GET /api/analytics/supplier-spoilage/` — Supplier quality and spoilage rate matrix
+# 2. Start Next.js development server
+npm run dev
+```
 
 ---
 
 ## Testing & Quality Assurance
 
-### Run Backend Test Suite
+### 1. Run Complete Backend Test Suite (29/29 Tests Passing)
 ```bash
-cd backend
-python manage.py test apps.authentication
+./venv/bin/python backend/manage.py test apps
 ```
+Tests all 7 modules:
+- `apps.authentication` (JWT token issuance, refresh rotation, blacklisting, RBAC)
+- `apps.inventory` (Batch intake, shelf-life countdown, flash-sale markdown)
+- `apps.crm` (Restaurant onboarding, tier progression, rolling spend)
+- `apps.orders` (FEFO greedy multi-batch deduction, row-level concurrency locking)
+- `apps.wastage` (Financial scrap loss write-offs, audit trails)
+- `apps.analytics` (Executive KPIs, supplier quality matrix)
+- `apps.employees` (Employee profiles, personal field self-updates, audit logging)
 
-### Run Frontend Static Typecheck & Linting
+### 2. Run Frontend Typecheck & Linting
 ```bash
 cd frontend
 npm run typecheck
 npm run lint
 ```
+
+### 3. Run REST API Tests with Bengali Perishables
+Open `freshflow_bengali_api_test.http` in VS Code (with REST Client extension) or IntelliJ HTTP Client:
+- Authenticates all 4 roles.
+- Intakes Bengali perishables: **পদ্মা নদীর তাজা ইলিশ**, **বগুড়ার মিষ্টি দই**, **চট্টগ্রামের গরুর মাংস**, **সাভারের তাজা দুধ**.
+- Executes atomic FEFO order allocation and checks Gold tier discounts.
+
+---
+
+## University Pre-Defense Deliverables
+
+Prepared for Department of Computer Science & Engineering, Green University of Bangladesh (Pre-Defence, Spring 2025):
+
+- **Slide Deck & Spoken Script:** [PRE_DEFENSE_PRESENTATION.md](docs/PRE_DEFENSE_PRESENTATION.md) — 15 structured slides with exact spoken timing (1-minute problem statement, 90-second literature review, FEFO architecture, live demo).
+- **Defense Board Q&A Guide:** [DEFENSE_QA_PREPARATION.md](docs/DEFENSE_QA_PREPARATION.md) — Top 10 tough defense board questions covering database concurrency, SQLite WAL under load, JWT token invalidation, and algorithm complexity.
+- **Technical Guide:** [TECHNICAL_GUIDE.md](docs/TECHNICAL_GUIDE.md) — System architecture, database locking formulas, and API specification.
+- **Operational User Manual:** [USER_MANUAL.md](docs/USER_MANUAL.md) — Step-by-step cold-chain execution lifecycle and code walkthroughs.

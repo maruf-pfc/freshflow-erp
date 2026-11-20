@@ -47,7 +47,7 @@ export function OverviewTab({
         month: "short",
         year: "numeric",
       })
-    : "15 Mar 1992";
+    : "Not specified";
 
   // Format Date of Joining
   const joinedStr = profile.date_of_joining
@@ -56,7 +56,22 @@ export function OverviewTab({
         month: "short",
         year: "numeric",
       })
-    : "12 Jan 2024";
+    : "Active Member";
+
+  const lastLoginEvent =
+    activities.find((a) => a.action?.includes("LOGIN")) || activities[0];
+  const lastLoginStr = lastLoginEvent
+    ? new Date(lastLoginEvent.created_at).toLocaleString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "Active Session";
+  const lastLoginDevice = lastLoginEvent?.ip_address
+    ? `• IP ${lastLoginEvent.ip_address}`
+    : "• Current Web Session";
 
   const moduleAccess = profile.module_access || {
     inventory_management: true,
@@ -244,7 +259,7 @@ export function OverviewTab({
                     National ID
                   </span>
                   <span className="font-mono text-slate-800 dark:text-slate-200">
-                    {profile.national_id || "19923657891234"}
+                    {profile.national_id || "—"}
                   </span>
                 </div>
                 <div>
@@ -332,9 +347,9 @@ export function OverviewTab({
                   </span>
                   <span className="inline-flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                     <Monitor size={12} className="text-slate-400" />
-                    <span>17 Dec 2024, 10:24 AM</span>
+                    <span>{lastLoginStr}</span>
                     <span className="text-slate-400 dark:text-slate-500">
-                      • Chrome on macOS
+                      {lastLoginDevice}
                     </span>
                   </span>
                 </div>

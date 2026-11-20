@@ -7,6 +7,7 @@ __pycache__/
 *$py.class
 *.so
 .Python
+docs/
 
 # Django & SQLite
 backend/.env
@@ -34,4 +35,3 @@ Thumbs.db
 .vscode/
 .cursor/*
 graphify-out/
-docs/

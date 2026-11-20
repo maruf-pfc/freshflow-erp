@@ -1,0 +1,468 @@
+### ==============================================================================
+### FRESHFLOW ERP — REST API TEST BENCH
+### ==============================================================================
+
+@baseUrl = http://localhost:8005/api
+@contentType = application/json
+
+# ------------------------------------------------------------------------------
+# 1. SYSTEM HEALTH & LIVENESS PROBE
+# ------------------------------------------------------------------------------
+
+### 1.1 Health Check Probe
+# @name healthCheck
+GET {{baseUrl}}/health/
+Accept: {{contentType}}
+
+
+# ------------------------------------------------------------------------------
+# 2. AUTHENTICATION & JWT TOKEN ROTATION
+# ------------------------------------------------------------------------------
+
+### 2.1 Authenticate as System Administrator (অ্যাডমিনিস্ট্রেটর লগইন)
+# @name loginAdmin
+POST {{baseUrl}}/auth/token/
+Content-Type: {{contentType}}
+
+{
+  "username": "admin_demo",
+  "password": "Password123!"
+}
+
+### Capture Admin Token
+@adminToken = {{loginAdmin.response.body.access}}
+@adminRefresh = {{loginAdmin.response.body.refresh}}
+
+
+### 2.2 Authenticate as Warehouse Manager (কোল্ড-স্টোরেজ গুদাম ব্যবস্থাপক)
+# @name loginWarehouse
+POST {{baseUrl}}/auth/token/
+Content-Type: {{contentType}}
+
+{
+  "username": "warehouse_demo",
+  "password": "Password123!"
+}
+
+### Capture Warehouse Manager Token
+@warehouseToken = {{loginWarehouse.response.body.access}}
+
+
+### 2.3 Authenticate as Sales Representative (বিক্রয় ও বিপণন প্রতিনিধি)
+# @name loginSales
+POST {{baseUrl}}/auth/token/
+Content-Type: {{contentType}}
+
+{
+  "username": "sales_demo",
+  "password": "Password123!"
+}
+
+### Capture Sales Token
+@salesToken = {{loginSales.response.body.access}}
+
+
+### 2.4 Authenticate as Restaurant Partner - Bistro Chef (রেস্টুরেন্ট ক্লায়েন্ট লগইন)
+# @name loginClient
+POST {{baseUrl}}/auth/token/
+Content-Type: {{contentType}}
+
+{
+  "username": "bistro_chef",
+  "password": "StrongPassword123!"
+}
+
+### Capture Client Token
+@clientToken = {{loginClient.response.body.access}}
+
+
+### 2.5 Single-Use Refresh Token Rotation Check
+# @name refreshToken
+POST {{baseUrl}}/auth/token/refresh/
+Content-Type: {{contentType}}
+
+{
+  "refresh": "{{adminRefresh}}"
+}
+
+
+# ------------------------------------------------------------------------------
+# 3. INVENTORY CATALOG (তাজা ও পচনশীল খাদ্য তালিকা)
+# ------------------------------------------------------------------------------
+
+### 3.1 List All Perishable Catalog Items
+# @name listItems
+GET {{baseUrl}}/inventory/items/
+Authorization: Bearer {{adminToken}}
+Accept: {{contentType}}
+
+
+### 3.2 Add পদ্মা নদীর তাজা রূপালী ইলিশ (Padma Fresh Hilsa)
+# @name createHilsaItem
+POST {{baseUrl}}/inventory/items/
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "পদ্মা নদীর তাজা রূপালী ইলিশ (Padma Hilsa Fish)",
+  "category": "SEAFOOD",
+  "required_temp_celsius": -2.00,
+  "temp_tolerance_celsius": 1.00,
+  "standard_shelf_life_days": 14,
+  "unit_of_measure": "kg"
+}
+
+
+### 3.3 Add বগুড়ার ঐতিহ্যবাহী স্পেশাল মিষ্টি দই (Bogura Premium Curd)
+# @name createBoguraCurdItem
+POST {{baseUrl}}/inventory/items/
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "বগুড়ার ঐতিহ্যবাহী মিষ্টি দই (Bogura Special Curd)",
+  "category": "DAIRY",
+  "required_temp_celsius": 2.00,
+  "temp_tolerance_celsius": 1.00,
+  "standard_shelf_life_days": 10,
+  "unit_of_measure": "pot"
+}
+
+
+### 3.4 Add চট্টগ্রামের তাজা গরুর মাংস (Chittagong Fresh Beef)
+# @name createChittagongBeefItem
+POST {{baseUrl}}/inventory/items/
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "চট্টগ্রামের তাজা গরুর মাংস (Chittagong Fresh Beef)",
+  "category": "MEAT_POULTRY",
+  "required_temp_celsius": -18.00,
+  "temp_tolerance_celsius": 1.50,
+  "standard_shelf_life_days": 45,
+  "unit_of_measure": "kg"
+}
+
+
+### 3.5 Add সাভার ডেইরি তাজা গরুর খাঁটি দুধ (Savar Fresh Cow Milk)
+# @name createSavarMilkItem
+POST {{baseUrl}}/inventory/items/
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "সাভার ডেইরি তাজা খাঁটি দুধ (Savar Fresh Cow Milk)",
+  "category": "DAIRY",
+  "required_temp_celsius": 3.00,
+  "temp_tolerance_celsius": 0.50,
+  "standard_shelf_life_days": 4,
+  "unit_of_measure": "liter"
+}
+
+
+### 3.6 Add মুন্সিগঞ্জের ডায়মন্ড আলু (Munshiganj Diamond Potatoes)
+# @name createMunshiganjPotatoItem
+POST {{baseUrl}}/inventory/items/
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "মুন্সিগঞ্জের ডায়মন্ড আলু (Munshiganj Fresh Potatoes)",
+  "category": "PRODUCE",
+  "required_temp_celsius": 12.00,
+  "temp_tolerance_celsius": 2.00,
+  "standard_shelf_life_days": 60,
+  "unit_of_measure": "kg"
+}
+
+
+# ------------------------------------------------------------------------------
+# 4. COLD STORAGE BATCHES (কোল্ড চেইন লট ও গুদাম ইনটেক)
+# ------------------------------------------------------------------------------
+
+### 4.1 List Active Batches with Shelf-Life Countdowns
+# @name listBatches
+GET {{baseUrl}}/inventory/batches/
+Authorization: Bearer {{warehouseToken}}
+Accept: {{contentType}}
+
+
+### 4.2 Intake Batch: Padma Hilsa Lot #1 (Expiring Soon - FEFO Priority)
+# @name intakeHilsaBatch1
+POST {{baseUrl}}/inventory/batches/
+Authorization: Bearer {{warehouseToken}}
+Content-Type: {{contentType}}
+
+{
+  "batch_number": "PADMA-HILSA-LOT-2025-01",
+  "item": 1,
+  "harvest_pack_date": "2025-01-20",
+  "expiry_date": "2025-01-27",
+  "initial_quantity": "50.00",
+  "current_quantity": "50.00",
+  "purchase_cost": "1450.00",
+  "base_selling_price": "1750.00",
+  "status": "AVAILABLE",
+  "storage_bin": "FREEZER-PADMA-A1"
+}
+
+
+### 4.3 Intake Batch: Padma Hilsa Lot #2 (Fresh Catch - Later Expiry)
+# @name intakeHilsaBatch2
+POST {{baseUrl}}/inventory/batches/
+Authorization: Bearer {{warehouseToken}}
+Content-Type: {{contentType}}
+
+{
+  "batch_number": "PADMA-HILSA-LOT-2025-02",
+  "item": 1,
+  "harvest_pack_date": "2025-01-23",
+  "expiry_date": "2025-02-05",
+  "initial_quantity": "100.00",
+  "current_quantity": "100.00",
+  "purchase_cost": "1400.00",
+  "base_selling_price": "1750.00",
+  "status": "AVAILABLE",
+  "storage_bin": "FREEZER-PADMA-A2"
+}
+
+
+### 4.4 Intake Batch: Bogura Sweet Curd
+# @name intakeBoguraBatch
+POST {{baseUrl}}/inventory/batches/
+Authorization: Bearer {{warehouseToken}}
+Content-Type: {{contentType}}
+
+{
+  "batch_number": "BOGURA-CURD-LOT-884",
+  "item": 2,
+  "harvest_pack_date": "2025-01-22",
+  "expiry_date": "2025-01-30",
+  "initial_quantity": "80.00",
+  "current_quantity": "80.00",
+  "purchase_cost": "260.00",
+  "base_selling_price": "340.00",
+  "status": "AVAILABLE",
+  "storage_bin": "CHILLER-BOGURA-B1"
+}
+
+
+### 4.5 Intake Batch: Flash-Sale Markdown Lot (Near Expiry - 30% Auto-Discount)
+# @name intakeFlashSaleBatch
+POST {{baseUrl}}/inventory/batches/
+Authorization: Bearer {{warehouseToken}}
+Content-Type: {{contentType}}
+
+{
+  "batch_number": "SAVAR-MILK-FLASH-099",
+  "item": 1,
+  "harvest_pack_date": "2025-01-22",
+  "expiry_date": "2025-01-25",
+  "initial_quantity": "30.00",
+  "current_quantity": "30.00",
+  "purchase_cost": "70.00",
+  "base_selling_price": "95.00",
+  "status": "FLASH_SALE",
+  "storage_bin": "CHILLER-QUICK-C1"
+}
+
+
+# ------------------------------------------------------------------------------
+# 5. CRM & B2B RESTAURANT CLIENTS (রেস্টুরেন্ট পার্টনার ও লয়ালটি টায়ার)
+# ------------------------------------------------------------------------------
+
+### 5.1 List All Registered Dining Establishments
+# @name listRestaurants
+GET {{baseUrl}}/crm/restaurants/
+Authorization: Bearer {{salesToken}}
+Accept: {{contentType}}
+
+
+### 5.2 Register Bengali Restaurant: কস্তুরী রেস্টুরেন্ট (Kasturi Restaurant - Purana Paltan)
+# @name registerKasturi
+POST {{baseUrl}}/crm/restaurants/
+Authorization: Bearer {{salesToken}}
+Content-Type: {{contentType}}
+
+{
+  "business_name": "কস্তুরী রেস্টুরেন্ট (Kasturi Restaurant - Purana Paltan)",
+  "trade_license_no": "TRAD-DHAKA-PALTAN-449102",
+  "user": 4,
+  "tier": "GOLD",
+  "total_spent_last_3_months": "620000.00",
+  "credit_limit": "200000.00"
+}
+
+
+### 5.3 Register Bengali Restaurant: স্টার কাবাব ও রেস্টুরেন্ট (Star Kabab - Dhanmondi 2)
+# @name registerStarKabab
+POST {{baseUrl}}/crm/restaurants/
+Authorization: Bearer {{salesToken}}
+Content-Type: {{contentType}}
+
+{
+  "business_name": "স্টার কাবাব ও রেস্টুরেন্ট (Star Kabab - Dhanmondi)",
+  "trade_license_no": "TRAD-DHAKA-DHAN-983144",
+  "user": 1,
+  "tier": "PLATINUM",
+  "total_spent_last_3_months": "1250000.00",
+  "credit_limit": "500000.00"
+}
+
+
+### 5.4 Check Restaurant Tier Discount Status
+# @name checkKasturiTier
+GET {{baseUrl}}/crm/restaurants/1/tier/
+Authorization: Bearer {{salesToken}}
+Accept: {{contentType}}
+
+
+# ------------------------------------------------------------------------------
+# 6. ATOMIC FEFO ORDER DISPATCH (ফার্স্ট-এক্সপায়ার্ড, ফার্স্ট-আউট অর্ডার ডেলিভারি)
+# ------------------------------------------------------------------------------
+
+### 6.1 Place B2B Multi-Item Order (Executes Database Row Locking & Greedy Batch Picking)
+# If ordering 60kg of Padma Hilsa, FEFO picks 50kg from LOT-2025-01 (Jan 27) + 10kg from LOT-2025-02 (Feb 05).
+# Gold Tier applies 7% dynamic discount on profit margin automatically.
+# @name submitFefoOrder
+POST {{baseUrl}}/orders/
+Authorization: Bearer {{clientToken}}
+Content-Type: {{contentType}}
+
+{
+  "items": [
+    {
+      "item_id": 1,
+      "quantity": "60.00"
+    }
+  ]
+}
+
+
+### 6.2 Sales Agent Placing Assisted Order on Behalf of Kasturi Restaurant
+# @name submitSalesOrder
+POST {{baseUrl}}/orders/
+Authorization: Bearer {{salesToken}}
+Content-Type: {{contentType}}
+
+{
+  "restaurant_id": 1,
+  "items": [
+    {
+      "item_id": 1,
+      "quantity": "15.00"
+    }
+  ]
+}
+
+
+### 6.3 List All Fulfilled and Allocated Orders
+# @name listOrders
+GET {{baseUrl}}/orders/
+Authorization: Bearer {{adminToken}}
+Accept: {{contentType}}
+
+
+### 6.4 Inspect Detailed Order Breakdown (Line Items & Allocated Batches)
+# @name getOrderDetail
+GET {{baseUrl}}/orders/1/
+Authorization: Bearer {{adminToken}}
+Accept: {{contentType}}
+
+
+# ------------------------------------------------------------------------------
+# 7. WASTAGE & FINANCIAL SCRAP LOSS (নষ্ট ও মেয়াদোত্তীর্ণ পণ্যের হিসাব)
+# ------------------------------------------------------------------------------
+
+### 7.1 Log Spoilage Write-Off with Cold Chain Breach Root-Cause
+# @name logWastage
+POST {{baseUrl}}/wastage/scrap/
+Authorization: Bearer {{warehouseToken}}
+Content-Type: {{contentType}}
+
+{
+  "batch": 1,
+  "quantity_lost": "5.00",
+  "financial_loss": "7250.00",
+  "reason": "COLD_CHAIN_BREACH"
+}
+
+
+### 7.2 List Wastage and Loss Logs
+# @name listWastageLogs
+GET {{baseUrl}}/wastage/logs/
+Authorization: Bearer {{adminToken}}
+Accept: {{contentType}}
+
+
+# ------------------------------------------------------------------------------
+# 8. EXECUTIVE ANALYTICS & COLD-CHAIN TELEMETRY (ব্যবসায়িক অ্যানালিটিক্স)
+# ------------------------------------------------------------------------------
+
+### 8.1 Executive Top-Line KPIs Aggregation
+# @name getExecutiveKpis
+GET {{baseUrl}}/analytics/kpis/
+Authorization: Bearer {{adminToken}}
+Accept: {{contentType}}
+
+
+### 8.2 Supplier Quality and Spoilage Rate Matrix
+# @name getSupplierSpoilage
+GET {{baseUrl}}/analytics/supplier-spoilage/
+Authorization: Bearer {{adminToken}}
+Accept: {{contentType}}
+
+
+# ------------------------------------------------------------------------------
+# 9. EMPLOYEE PROFILE & SECURITY AUDIT TRAIL (কর্মচারী প্রোফাইল ও অডিট লগ)
+# ------------------------------------------------------------------------------
+
+### 9.1 Get Current Authenticated Employee Profile (নিজের প্রোফাইল দেখুন)
+# @name getMyProfile
+GET {{baseUrl}}/employees/me/
+Authorization: Bearer {{adminToken}}
+Accept: {{contentType}}
+
+
+### 9.2 Update Personal Profile Information (ব্যক্তিগত তথ্য হালনাগাদ)
+# @name updateMyProfile
+PATCH {{baseUrl}}/employees/me/
+Authorization: Bearer {{adminToken}}
+Content-Type: {{contentType}}
+
+{
+  "personal_phone": "+880 1712 998877",
+  "address": "বাড়ি নং ১২, রোড নং ৪, ধানমন্ডি আ/এ, ঢাকা ১২০৫, বাংলাদেশ",
+  "emergency_contact_name": "নুসরাত জাহান (Nusrat Jahan)",
+  "emergency_contact_phone": "+880 1811 223344",
+  "preferred_language": "বাংলা, English"
+}
+
+
+### 9.3 Get Personal Activity Audit Trail (সাম্প্রতিক সিকিউরিটি অ্যাক্টিভিটি)
+# @name getMyActivity
+GET {{baseUrl}}/employees/me/activity/
+Authorization: Bearer {{adminToken}}
+Accept: {{contentType}}
+
+
+### 9.4 Get Corporate Reporting Hierarchy Structure (রিপোর্টিং লাইন)
+# @name getReportingStructure
+GET {{baseUrl}}/employees/me/reporting-structure/
+Authorization: Bearer {{adminToken}}
+Accept: {{contentType}}
+
+
+### 9.5 Administrator: List All Corporate Departments
+# @name listDepartments
+GET {{baseUrl}}/employees/departments/
+Authorization: Bearer {{adminToken}}
+Accept: {{contentType}}
+
+
+### 9.6 Administrator: Global Immutable Audit Trail Log
+# @name listAuditLogs
+GET {{baseUrl}}/employees/audit-logs/
+Authorization: Bearer {{adminToken}}
+Accept: {{contentType}}

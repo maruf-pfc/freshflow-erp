@@ -20,7 +20,7 @@ export function EmploymentTab({
         month: "short",
         year: "numeric",
       })
-    : "12 Jan 2024";
+    : "Active Member";
 
   return (
     <div className="rounded-xl border border-slate-200/90 bg-white p-6 shadow-xs dark:border-[#1b2b24] dark:bg-[#0e1512]">
