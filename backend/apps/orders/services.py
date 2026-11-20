@@ -51,7 +51,8 @@ class OrderAllocationService:
                 raise ValueError(f"Quantity for item_id {item_id} must be strictly positive (> 0).")
 
             try:
-                perishable_item = PerishableItem.objects.get(id=item_id)
+                # Lock the perishable item row to serialize concurrent FEFO allocations
+                perishable_item = PerishableItem.objects.select_for_update().get(id=item_id)
             except PerishableItem.DoesNotExist:
                 raise ValueError(f"PerishableItem with id {item_id} does not exist.")
 

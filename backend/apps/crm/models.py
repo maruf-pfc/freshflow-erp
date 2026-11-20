@@ -45,6 +45,9 @@ class Restaurant(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        ordering = ["id"]
+
     @property
     def tier_discount_percentage(self) -> Decimal:
         return (TIER_DISCOUNT_RATES.get(self.tier, Decimal("0.00")) * Decimal("100")).quantize(Decimal("0.01"))

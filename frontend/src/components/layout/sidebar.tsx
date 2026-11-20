@@ -10,6 +10,7 @@ import {
   Package,
   Settings,
   Snowflake,
+  Terminal,
   Trash2,
   User,
   Users,
@@ -199,6 +200,20 @@ export function Sidebar({ className, onMobileClose }: SidebarProps) {
               </div>
             );
           })}
+
+          {/* API Test Bench Link */}
+          <Link
+            href="/api-tester"
+            className={cn(
+              "flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors",
+              pathname === "/api-tester"
+                ? "bg-[#0b5349] text-white shadow-xs"
+                : "text-emerald-100/70 hover:bg-[#09473e] hover:text-white",
+            )}
+          >
+            <Terminal size={16} className="shrink-0 text-[#34d399]" />
+            <span>API Test Bench</span>
+          </Link>
 
           {/* Section Divider */}
           <div className="pt-2 pb-1">
